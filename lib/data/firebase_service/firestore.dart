@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:instagram_app/data/models/usermodel.dart';
-import 'package:instagram_app/util/exceptions.dart';
+import 'package:led/data/models/usermodel.dart';
+import 'package:led/util/exceptions.dart';
+
 import 'package:uuid/uuid.dart';
 
 class FirestoreMethods {

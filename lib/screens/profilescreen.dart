@@ -1,14 +1,16 @@
-// ignore_for_file: unused_field, prefer_const_constructors
+// ignore_for_file: prefer_const_constructors
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/data/firebase_service/firestore.dart';
-import 'package:instagram_app/data/models/usermodel.dart';
-import 'package:instagram_app/screens/edit_profile_screen.dart';
-import 'package:instagram_app/screens/post_screen.dart';
-import 'package:instagram_app/util/cache_image.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/data/firebase_service/firestore.dart';
+import 'package:led/data/models/usermodel.dart';
+import 'package:led/screens/edit_profile_screen.dart';
+import 'package:led/screens/post_screen.dart';
+import 'package:led/util/cache_image.dart';
+
 
 class Profilescreen extends StatefulWidget {
   final uid;
@@ -21,11 +23,10 @@ class Profilescreen extends StatefulWidget {
 class _ProfilescreenState extends State<Profilescreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
-  late final _postCount;
+  int _postCount = 0;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _getPostCount();
   }
@@ -45,23 +46,24 @@ class _ProfilescreenState extends State<Profilescreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.grey.shade100,
+        backgroundColor: AppColors.background,
         body: SafeArea(
-            child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: FutureBuilder(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: FutureBuilder(
                   future: FirestoreMethods().getUser(widget.uid),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return Center(
-                        child: CircularProgressIndicator(),
+                        child: CircularProgressIndicator(color: AppColors.primary),
                       );
                     }
-                    return headProfilePage(snapshot.data!);
-                  }),
-            ),
-            StreamBuilder(
+                    return _buildHeader(snapshot.data!);
+                  },
+                ),
+              ),
+              StreamBuilder(
                 stream: _firebaseFirestore
                     .collection("posts")
                     .where("uid", isEqualTo: widget.uid)
@@ -69,252 +71,317 @@ class _ProfilescreenState extends State<Profilescreen> {
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return SliverToBoxAdapter(
-                        child: Center(
-                      child: CircularProgressIndicator(),
-                    ));
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    );
                   }
-                  var snapLength = snapshot.data!.docs.length;
                   return SliverGrid(
-                      delegate: SliverChildBuilderDelegate((context, index) {
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
                         var snap = snapshot.data!.docs[index].data();
                         return GestureDetector(
                           onTap: () {
                             Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => PostScreen(snap)));
+                              builder: (context) => PostScreen(snap),
+                            ));
                           },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(5),
-                              border: Border.all(
-                                  color: Colors.grey.shade300, width: 0.4),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(5),
-                              child: CacheImage(
-                                  imageUrl: snap[
-                                      "postImage"]), // استخدام CacheImage بدلاً من Image.network
-                            ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4.r),
+                            child: CacheImage(imageUrl: snap["postImage"]),
                           ),
                         );
-                      }, childCount: snapLength),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 3,
-                          mainAxisSpacing: 4,
-                          childAspectRatio: 0.9));
-                })
-          ],
-        )),
+                      },
+                      childCount: snapshot.data!.docs.length,
+                    ),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 2,
+                      childAspectRatio: 1,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget headProfilePage(Usermodel user) {
+  Widget _buildHeader(Usermodel user) {
     bool isMyProfile = user.uid == FirebaseAuth.instance.currentUser!.uid;
     return Container(
-      color: Colors.white,
+      color: AppColors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
-                child: ClipOval(
-                  child: SizedBox(
-                      height: 80.h,
-                      width: 80.w,
-                      child: CacheImage(imageUrl: user.imgProfile)),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 50.w,
-                      ),
-                      Text(
-                        "$_postCount",
-                        style: TextStyle(
-                            fontSize: 15.sp, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(
-                        width: 50.w,
-                      ),
-                      Text(
-                        user.followers.length.toString(),
-                        style: TextStyle(
-                            fontSize: 15.sp, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(
-                        width: 60.w,
-                      ),
-                      Text(
-                        user.following.length.toString(),
-                        style: TextStyle(
-                            fontSize: 15.sp, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 43.w,
-                      ),
-                      Text(
-                        "posts",
-                        style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade700),
-                      ),
-                      SizedBox(
-                        width: 25.w,
-                      ),
-                      Text(
-                        "Followers",
-                        style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade700),
-                      ),
-                      SizedBox(
-                        width: 13.w,
-                      ),
-                      Text(
-                        "Following",
-                        style: TextStyle(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade700),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+          SizedBox(height: 16.h),
+          _buildAvatarAndStats(user),
+          SizedBox(height: 14.h),
+          _buildUserInfo(user),
+          SizedBox(height: 16.h),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.userName,
-                  style:
-                      TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
+            padding: EdgeInsets.symmetric(horizontal: 14.w),
+            child: isMyProfile
+                ? _buildEditButtonAndLogoutButton(user)
+                : _buildFollowMessageButtons(user),
+          ),
+          SizedBox(height: 14.h),
+          _buildTabBar(),
+          SizedBox(height: 2.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarAndStats(Usermodel user) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: AppColors.storyGradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(2.5),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.background,
+              ),
+              child: ClipOval(
+                child: SizedBox(
+                  width: 76.w,
+                  height: 76.w,
+                  child: CacheImage(imageUrl: user.imgProfile),
                 ),
-                SizedBox(
-                  height: 5.h,
-                ),
-                Text(
-                  user.bio,
-                  style:
-                      TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
-                ),
-              ],
+              ),
             ),
           ),
-          SizedBox(
-            height: 20.h,
-          ),
-          Padding(
-              padding: EdgeInsets.symmetric(horizontal: 14.w),
-              child: isMyProfile
-                  ? editedProfileButton(user)
-                  : followAndMessageButtons(user)),
-          SizedBox(
-            height: 8.h,
-          ),
-          SizedBox(
-            height: 30.h,
-            width: double.infinity,
-            child: const TabBar(
-                unselectedLabelColor: Colors.grey,
-                labelColor: Colors.black,
-                indicatorColor: Colors.black,
-                tabs: [
-                  Icon(Icons.grid_on),
-                  Icon(Icons.video_collection),
-                  Icon(Icons.person),
-                ]),
-          ),
-          SizedBox(
-            height: 2.h,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildStatItem("$_postCount", "Posts"),
+                _buildStatItem("${user.followers.length}", "Followers"),
+                _buildStatItem("${user.following.length}", "Following"),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget editedProfileButton(Usermodel user) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => EditProfileScreen(
-                      uid: _auth.currentUser!.uid,
-                      userName:user.userName ,
-                      bio: user.bio,
-                      imgProfile: user.imgProfile,
-                    )));
-      },
-      child: Container(
-        alignment: Alignment.center,
-        height: 30.h,
-        width: double.infinity,
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(5.r),
-            border: Border.all(color: Colors.grey.shade500,) ),
-        child: Text("Edit Your Profile"),
-      ),
+  Widget _buildStatItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget followAndMessageButtons(Usermodel user) {
+  Widget _buildUserInfo(Usermodel user) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 18.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            user.userName,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          if (user.bio.isNotEmpty) ...[
+            SizedBox(height: 4.h),
+            Text(
+              user.bio,
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+Widget _buildEditButtonAndLogoutButton(Usermodel user) {
+  return Row(
+    children: [
+      Expanded(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditProfileScreen(
+                  uid: _auth.currentUser!.uid,
+                  userName: user.userName,
+                  bio: user.bio,
+                  imgProfile: user.imgProfile,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            alignment: Alignment.center,
+            height: 36.h,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Text(
+              "Edit Profile",
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+      SizedBox(width: 8.w),
+      GestureDetector(
+        onTap: () async {
+          await FirebaseAuth.instance.signOut();
+        },
+        child: Container(
+          height: 36.h,
+          width: 36.h,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Icon(
+            Icons.logout,
+            size: 18.sp,
+            color: AppColors.like,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+  Widget _buildFollowMessageButtons(Usermodel user) {
     bool isFollowing =
         user.followers.contains(FirebaseAuth.instance.currentUser!.uid);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        ElevatedButton(
-          onPressed: () async {
-            if (isFollowing) {
-              await FirestoreMethods().unfollowUser(user.uid);
-            } else {
-              await FirestoreMethods().followUser(user.uid);
-            }
-            setState(() {}); // تحديث الواجهة بعد الضغط
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isFollowing ? Colors.white : Colors.blue,
-            side: BorderSide(color: Colors.blue),
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-          ),
-          child: Text(
-            isFollowing ? "Unfollow" : "Follow",
-            style: TextStyle(color: isFollowing ? Colors.black : Colors.white),
+        Expanded(
+          child: GestureDetector(
+            onTap: () async {
+              if (isFollowing) {
+                await FirestoreMethods().unfollowUser(user.uid);
+              } else {
+                await FirestoreMethods().followUser(user.uid);
+              }
+              setState(() {});
+            },
+            child: Container(
+              height: 36.h,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: isFollowing
+                    ? null
+                    : LinearGradient(
+                        colors: [AppColors.primary, AppColors.accent],
+                      ),
+                color: isFollowing ? AppColors.surfaceElevated : null,
+                borderRadius: BorderRadius.circular(8.r),
+                border: isFollowing
+                    ? Border.all(color: AppColors.border)
+                    : null,
+              ),
+              child: Text(
+                isFollowing ? "Unfollow" : "Follow",
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: isFollowing ? AppColors.textPrimary : Colors.white,
+                ),
+              ),
+            ),
           ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            // هنا ممكن تضيف نافذة الدردشة
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.grey.shade300,
-            padding: EdgeInsets.symmetric(horizontal: 30.w),
-          ),
-          child: Text(
-            "Message",
-            style: TextStyle(color: Colors.black),
+        SizedBox(width: 8.w),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {},
+            child: Container(
+              height: 36.h,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Text(
+                "Message",
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: AppColors.divider, width: 0.5),
+          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
+      ),
+      child: TabBar(
+        unselectedLabelColor: AppColors.icon,
+        labelColor: AppColors.primary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 1.5,
+        tabs: [
+          Tab(icon: Icon(Icons.grid_on, size: 22.sp)),
+          Tab(icon: Icon(Icons.play_circle_outline, size: 22.sp)),
+          Tab(icon: Icon(Icons.person_pin_outlined, size: 22.sp)),
+        ],
+      ),
     );
   }
 }

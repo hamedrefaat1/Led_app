@@ -1,8 +1,12 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/screens/add_text_for_post.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/screens/add_text_for_post.dart';
+
 import 'package:photo_manager/photo_manager.dart';
 
 class AddPostScreen extends StatefulWidget {
@@ -18,6 +22,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
   File? _file;
   int currentPage = 0;
   int? lastPage;
+  int _selectedIndex = 0;
 
   _fetchNewMedia() async {
     lastPage = currentPage;
@@ -25,43 +30,39 @@ class _AddPostScreenState extends State<AddPostScreen> {
     if (ps.isAuth) {
       List<AssetPathEntity> album =
           await PhotoManager.getAssetPathList(type: RequestType.image);
+
+      if (album.isEmpty) return;
+
       List<AssetEntity> media =
           await album[0].getAssetListPaged(page: currentPage, size: 60);
+
+      if (media.isEmpty) return;
 
       for (var asset in media) {
         if (asset.type == AssetType.image) {
           final file = await asset.file;
-          if (file != null) {
-            path.add(File(file.path));
-            _file = path[0];
-          }
+          if (file != null) path.add(File(file.path));
         }
       }
+
+      if (path.isNotEmpty) _file = path[0];
+
       List<Widget> temp = [];
       for (var asset in media) {
         temp.add(
           FutureBuilder(
-            future: asset.thumbnailDataWithSize(ThumbnailSize(200, 200)),
+            future: asset.thumbnailDataWithSize(const ThumbnailSize(300, 300)),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done)
-                return Container(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Image.memory(
-                          snapshot.data!,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-
-              return Container();
+              if (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.data != null) {
+                return Image.memory(snapshot.data!, fit: BoxFit.cover);
+              }
+              return Container(color: AppColors.surfaceElevated);
             },
           ),
         );
       }
+
       setState(() {
         _mediaList.addAll(temp);
         currentPage++;
@@ -71,103 +72,161 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _fetchNewMedia();
   }
 
-  int indexx = 0;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
+      
+        title: Text(
           'New Post',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        centerTitle: false,
+        centerTitle: true,
         actions: [
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => Add_Text_For_Post( _file!,),
-                  ));
-                },
-                child: Text(
-                  'Next',
-                  style: TextStyle(fontSize: 15.sp, color: Colors.blue),
+          GestureDetector(
+            onTap: () {
+              if (_file != null) {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => Add_Text_For_Post(_file!),
+                ));
+              }
+            },
+            child: Container(
+              margin: EdgeInsets.only(right: 14.w),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent],
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+              ),
+              child: Text(
+                'Next',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Container(
-            child: Column(
+      body: _mediaList.isEmpty
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : Column(
               children: [
-                SizedBox(
-                  height: 375.h,
-                  child: GridView.builder(
-                    itemCount: _mediaList.isEmpty ? _mediaList.length : 1,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 1,
-                      mainAxisSpacing: 1,
-                      crossAxisSpacing: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      return _mediaList[indexx];
-                    },
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  height: 40.h,
-                  color: Colors.white,
-                  child: Row(
-                    children: [
-                      SizedBox(width: 10.w),
-                      Text(
-                        'Recent',
-                        style: TextStyle(
-                            fontSize: 15.sp, fontWeight: FontWeight.w600),
+                _buildPreview(),
+                _buildGalleryHeader(),
+                Expanded(child: _buildGalleryGrid()),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildPreview() {
+    return Container(
+      height: 340.h,
+      width: double.infinity,
+      color: AppColors.surfaceCard,
+      child: _file != null
+          ? Image.file(_file!, fit: BoxFit.cover)
+          : _mediaList.isNotEmpty
+              ? _mediaList[0]
+              : Container(color: AppColors.surfaceCard),
+    );
+  }
+
+  Widget _buildGalleryHeader() {
+    return Container(
+      height: 44.h,
+      padding: EdgeInsets.symmetric(horizontal: 14.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider, width: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.photo_library_outlined, size: 16.sp, color: AppColors.primary),
+          SizedBox(width: 6.w),
+          Text(
+            'Recents',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          Icon(Icons.expand_more, size: 20.sp, color: AppColors.icon),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGalleryGrid() {
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: _mediaList.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+      ),
+      itemBuilder: (context, index) {
+        final bool isSelected = _selectedIndex == index;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedIndex = index;
+              if (index < path.length) _file = path[index];
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              border: isSelected
+                  ? Border.all(color: AppColors.primary, width: 2)
+                  : null,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _mediaList[index],
+                if (isSelected)
+                  Container(
+                    color: AppColors.primaryGlow,
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.all(4.r),
+                    child: Container(
+                      width: 20.w,
+                      height: 20.w,
+                      
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
                       ),
-                    ],
+                      child: Icon(Icons.check, size: 12.sp, color: Colors.white),
+                    ),
                   ),
-                ),
-                GridView.builder(
-                  shrinkWrap: true,
-                  itemCount: _mediaList.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 1,
-                    crossAxisSpacing: 2,
-                  ),
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          indexx = index;
-                          _file = path[index];
-                        });
-                      },
-                      child: _mediaList[index],
-                    );
-                  },
-                ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

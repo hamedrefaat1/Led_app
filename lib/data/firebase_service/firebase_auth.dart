@@ -4,10 +4,10 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_app/data/firebase_service/firestore.dart';
-import 'package:instagram_app/data/firebase_service/storage.dart';
-import 'package:instagram_app/screens/home.dart';
-import 'package:instagram_app/util/exceptions.dart';
+import 'package:led/auth/mainpage.dart';
+import 'package:led/data/firebase_service/firestore.dart';
+import 'package:led/data/firebase_service/storage.dart';
+import 'package:led/util/exceptions.dart';
 
 class Authentication {
   FirebaseAuth _auth = FirebaseAuth.instance;
@@ -39,39 +39,35 @@ class Authentication {
               userName: userName,
               bio: bio,
               imgProfile: uRL == ''
-                  ? "https://firebasestorage.googleapis.com/v0/b/instagram-app-808af.appspot.com/o/person.png?alt=media&token=87de3c82-45c4-42f5-9d35-9640692b26ae"
-                  : uRL
-                  );
+                  ? "https://firebasestorage.googleapis.com/v0/b/Led-app-808af.appspot.com/o/person.png?alt=media&token=87de3c82-45c4-42f5-9d35-9640692b26ae"
+                  : uRL);
+                  await _auth.signOut();
         } else {
           throw exceptions("password and confirm password should be same");
         }
       } else {
         throw exceptions("enter all a fileds");
       }
-      
     } on FirebaseAuthException catch (e) {
       throw exceptions(e.message.toString());
     }
   }
 
   Future<void> logIn({
-  required String email,
-  required String password,
-  required BuildContext context,
-}) async {
-  try {
-    if (email.isNotEmpty && password.isNotEmpty) {
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password.trim(),
-      );
-      Navigator.push(context, MaterialPageRoute(builder: (context)=> HomeScreen()));
-    } else {
-      throw exceptions("Please enter both email and password.");
+    required String email,
+    required String password,
+  }) async {
+    try {
+      if (email.isNotEmpty && password.isNotEmpty) {
+        await _auth.signInWithEmailAndPassword(
+          email: email.trim(),
+          password: password.trim(),
+        );
+      } else {
+        throw exceptions("Please enter both email and password.");
+      }
+    } on FirebaseAuthException catch (e) {
+      throw exceptions(e.message.toString());
     }
-  } on FirebaseAuthException catch (e) {
-    throw exceptions(e.message.toString());
   }
-}
-
 }

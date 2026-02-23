@@ -1,14 +1,13 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/data/firebase_service/firebase_auth.dart';
-import 'package:instagram_app/util/dialog.dart';
-import 'package:instagram_app/util/exceptions.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/data/firebase_service/firebase_auth.dart';
+import 'package:led/util/dialog.dart';
+import 'package:led/util/exceptions.dart';
 
 class LoginScreen extends StatefulWidget {
-final  VoidCallback show;
-   LoginScreen({super.key , required this.show});
+  final VoidCallback show;
+  const LoginScreen({super.key, required this.show});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -16,163 +15,238 @@ final  VoidCallback show;
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController email = TextEditingController();
-  FocusNode email_F = FocusNode();
-
-  final password = TextEditingController();
-  FocusNode password_F = FocusNode();
+  final TextEditingController password = TextEditingController();
+  final FocusNode emailF = FocusNode();
+  final FocusNode passwordF = FocusNode();
+  bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
-    email_F.addListener(() {
-      setState(() {}); // ✅ عشان يعيد بناء الواجهة لما يتغير الفوكس
-    });
-    password_F.addListener(() {
-      setState(() {}); // ✅ عشان يعيد بناء الواجهة لما يتغير الفوكس
-    });
+    emailF.addListener(() => setState(() {}));
+    passwordF.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    emailF.dispose();
+    passwordF.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
+      backgroundColor: AppColors.background,
       body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          SizedBox(height: 100.h, width: 96.w),
-          Center(
-            child: Image.asset("assets/image/logo.jpg"),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 80.h),
+              _buildLogo(),
+              SizedBox(height: 10.h),
+              Text(
+                "Welcome back",
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 60.h),
+              _buildTextField(email, Icons.email_outlined, "Email", emailF),
+              SizedBox(height: 12.h),
+              _buildPasswordField(),
+              SizedBox(height: 10.h),
+              _buildForgotPassword(),
+              SizedBox(height: 28.h),
+              _buildLoginButton(),
+              SizedBox(height: 20.h),
+              _buildSignUpRedirect(),
+              SizedBox(height: 30.h),
+            ],
           ),
-          SizedBox(
-            height: 100.h,
-          ),
-          texitFiled(email, Icons.email, "Email", email_F),
-          SizedBox(
-            height: 15.h,
-          ),
-          texitFiled(password, Icons.lock, "Password", password_F),
-          SizedBox(
-            height: 15.h,
-          ),
-          forgetPassword(),
-          SizedBox(
-            height: 15.h,
-          ),
-          loginClickButton(),
-          SizedBox(
-            height: 15.h,
-          ),
-          dontHaveAccountGoToSignUp()
-        ],
-      )),
-    );
-  }
-
-  Padding dontHaveAccountGoToSignUp() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "Don't have account? ",
-            style: TextStyle(
-                fontSize: 15.sp,
-                color: Colors.grey,
-                fontWeight: FontWeight.bold),
-          ),
-          GestureDetector(
-            onTap:widget.show,
-            child: Text(
-              "SignUp",
-              style: TextStyle(
-                  fontSize: 15.sp,
-                  color: Colors.blue,
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Padding loginClickButton() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
+  Widget _buildLogo() {
+    return ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: AppColors.storyGradient,
+      ).createShader(bounds),
+      child: Text(
+        'LED',
+        style: TextStyle(
+          fontSize: 40.sp,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          letterSpacing: 8,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    IconData icon,
+    String hint,
+    FocusNode focusNode,
+  ) {
+    final bool focused = focusNode.hasFocus;
+    return Container(
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: focused ? AppColors.primary : AppColors.border,
+          width: focused ? 1.5 : 0.8,
+        ),
+      ),
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textHint),
+          prefixIcon: Icon(
+            icon,
+            size: 20.sp,
+            color: focused ? AppColors.primary : AppColors.icon,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField() {
+    final bool focused = passwordF.hasFocus;
+    return Container(
+      height: 50.h,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: focused ? AppColors.primary : AppColors.border,
+          width: focused ? 1.5 : 0.8,
+        ),
+      ),
+      child: TextField(
+        controller: password,
+        focusNode: passwordF,
+        obscureText: _obscurePassword,
+        style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: "Password",
+          hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textHint),
+          prefixIcon: Icon(
+            Icons.lock_outline,
+            size: 20.sp,
+            color: focused ? AppColors.primary : AppColors.icon,
+          ),
+          suffixIcon: GestureDetector(
+            onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+            child: Icon(
+              _obscurePassword
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              size: 18.sp,
+              color: AppColors.icon,
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForgotPassword() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Text(
+        "Forgot password?",
+        style: TextStyle(
+          fontSize: 13.sp,
+          color: AppColors.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return GestureDetector(
+      onTap: () async {
+        try {
+          await Authentication().logIn(
+            email: email.text,
+            password: password.text,
+          );
+        } on exceptions catch (e) {
+          dialogBuilder(context, e.massage);
+        }
+      },
       child: Container(
         alignment: Alignment.center,
         width: double.infinity,
-        height: 44.h,
+        height: 50.h,
         decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(10.r),
-        ),
-        child: GestureDetector(
-          onTap:() async{
-              try {
-            await Authentication().logIn(
-                email: email.text,
-                password: password.text,
-                context: context,
-                );
-          } on exceptions catch (e) {
-            dialogBuilder(context, e.massage);
-          }
-          },
-          child: Text(
-            "Login",
-            style: TextStyle(
-                fontSize: 20.sp,
-                color: Colors.white,
-                fontWeight: FontWeight.bold),
+          gradient: LinearGradient(
+            colors: [AppColors.primary, AppColors.accent],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget forgetPassword() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
-      child: Text(
-        "Forgot your password?",
-        style: TextStyle(
-            fontSize: 13.sp, color: Colors.blue, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget texitFiled(TextEditingController controller, IconData icon,
-      String type, FocusNode focusNode) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
-      child: Container(
-        height: 44.h,
-        decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(5.r)),
-        child: TextField(
-          style: TextStyle(fontSize: 18.sp, color: Colors.black),
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            hintText: type,
-            prefixIcon: Icon(
-              icon,
-              color: focusNode.hasFocus ? Colors.black : Colors.grey,
+          borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryGlow,
+              blurRadius: 16,
+              spreadRadius: 1,
+              offset: const Offset(0, 4),
             ),
-            contentPadding:
-                EdgeInsets.symmetric(horizontal: 15.w, vertical: 15.h),
-            enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5.r),
-                borderSide: BorderSide(color: Colors.grey, width: 2.w)),
-            focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5.r),
-                borderSide: BorderSide(color: Colors.black, width: 2.w)),
+          ],
+        ),
+        child: Text(
+          "Sign In",
+          style: TextStyle(
+            fontSize: 15.sp,
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSignUpRedirect() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(fontSize: 13.sp, color: AppColors.textSecondary),
+        ),
+        GestureDetector(
+          onTap: widget.show,
+          child: Text(
+            "Sign Up",
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

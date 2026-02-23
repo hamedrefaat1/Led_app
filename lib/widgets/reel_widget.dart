@@ -1,13 +1,15 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/data/firebase_service/firestore.dart';
-import 'package:instagram_app/util/cache_image.dart';
-import 'package:instagram_app/widgets/comment_widget.dart';
-import 'package:instagram_app/widgets/like_animation.dart';
+import 'package:led/data/firebase_service/firestore.dart';
+import 'package:led/util/cache_image.dart';
+import 'package:led/widgets/comment_widget.dart';
+import 'package:led/widgets/like_animation.dart';
 import 'package:video_player/video_player.dart';
 
 class ReelWidget extends StatefulWidget {
@@ -174,24 +176,24 @@ class _ReelWidgetState extends State<ReelWidget> {
               ),
               FutureBuilder<int>(
                 future:
-                    getCommentCount(), // استدعاء الدالة التي تجلب عدد التعليقات
+                    getCommentCount(), 
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Text("...",
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14.sp)); // عرض تحميل أثناء جلب البيانات
+                            fontSize: 14.sp)); 
                   }
                   if (snapshot.hasError) {
                     return Text("Error",
                         style: TextStyle(
                             color: Colors.white,
-                            fontSize: 14.sp)); // في حالة وجود خطأ
+                            fontSize: 14.sp)); 
                   }
                   return Text(snapshot.data.toString(),
                       style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14.sp)); // عرض عدد التعليقات الفعلي
+                          fontSize: 14.sp)); 
                 },
               ),
               SizedBox(

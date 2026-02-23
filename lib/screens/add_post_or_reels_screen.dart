@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/screens/addpostscreen.dart';
-import 'package:instagram_app/screens/addreelsscreen.dart';
+import 'package:led/screens/addpostscreen.dart';
+import 'package:led/screens/addreelsscreen.dart';
+
 
 class AddPostOrReelsScreen extends StatefulWidget {
   const AddPostOrReelsScreen({super.key});

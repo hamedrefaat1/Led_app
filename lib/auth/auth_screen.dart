@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:instagram_app/screens/login_screen.dart';
-import 'package:instagram_app/screens/signup_screen.dart';
+import 'package:led/screens/login_screen.dart';
+import 'package:led/screens/signup_screen.dart';
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_app/auth/auth_screen.dart';
-import 'package:instagram_app/widgets/navigation.dart';
+import 'package:led/auth/auth_screen.dart';
+import 'package:led/widgets/navigation.dart';
+
 
 
 class MainPage extends StatelessWidget {

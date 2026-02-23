@@ -49,13 +49,13 @@ class DefaultFirebaseOptions {
     storageBucket: 'instagram-app-808af.appspot.com',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAn0wwCTrs4lXX17rbOzKLujOwPs0GDs6A',
-    appId: '1:95695539959:android:44b9df0181abde76ee0df2',
-    messagingSenderId: '95695539959',
-    projectId: 'instagram-app-808af',
-    storageBucket: 'instagram-app-808af.appspot.com',
-  );
+static const FirebaseOptions android = FirebaseOptions(
+  apiKey: 'AIzaSyAn0wwCTrs4lXX17rbOzKLujOwPs0GDs6A',
+  appId: '1:95695539959:android:9af1044132f3fe1cee0df2',
+  messagingSenderId: '95695539959',
+  projectId: 'instagram-app-808af',
+  storageBucket: 'instagram-app-808af.appspot.com',
+);
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB90qFgEhHzeiaF6_H58iC2FvU4qoCJt6g',
@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '95695539959',
     projectId: 'instagram-app-808af',
     storageBucket: 'instagram-app-808af.appspot.com',
-    iosBundleId: 'com.example.instagramApp',
+    iosBundleId: 'com.example.LedApp',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '95695539959',
     projectId: 'instagram-app-808af',
     storageBucket: 'instagram-app-808af.appspot.com',
-    iosBundleId: 'com.example.instagramApp',
+    iosBundleId: 'com.example.LedApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

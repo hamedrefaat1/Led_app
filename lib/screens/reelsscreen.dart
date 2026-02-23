@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_app/widgets/reel_widget.dart';
+import 'package:led/widgets/reel_widget.dart';
+
 
 class Reelsscreen extends StatefulWidget {
   const Reelsscreen({super.key});

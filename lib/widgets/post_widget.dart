@@ -1,14 +1,14 @@
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:date_format/date_format.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/data/firebase_service/firestore.dart';
-import 'package:instagram_app/util/cache_image.dart';
-import 'package:instagram_app/widgets/comment_widget.dart';
-import 'package:instagram_app/widgets/like_animation.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/data/firebase_service/firestore.dart';
+import 'package:led/util/cache_image.dart';
+import 'package:led/widgets/comment_widget.dart';
+import 'package:led/widgets/like_animation.dart';
+
 
 class PostWidget extends StatefulWidget {
   final snapshot;
@@ -19,208 +19,282 @@ class PostWidget extends StatefulWidget {
 }
 
 class _PostWidgetState extends State<PostWidget> {
- 
   bool isLikeAnimating = false;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 375.w,
-          height: 54.h,
-          color: Colors.white,
-          child: Center(
-            child: ListTile(
-              leading: ClipOval(
+    final bool isLiked = widget.snapshot["likes"]
+        .contains(FirebaseAuth.instance.currentUser!.uid);
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h),
+      color: AppColors.background,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(),
+          _buildImage(),
+          _buildActions(isLiked),
+          _buildInfo(),
+          Divider(color: AppColors.divider, thickness: 0.5, height: 0),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: AppColors.storyGradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.background,
+              ),
+              child: ClipOval(
                 child: SizedBox(
-                  width: 35.w,
-                  height: 35.h,
-                  child:
-                      CacheImage(imageUrl: widget.snapshot["userImgProfile"]),
+                  width: 36.w,
+                  height: 36.w,
+                  child: CacheImage(imageUrl: widget.snapshot["userImgProfile"]),
                 ),
               ),
-              title: Text(
-                widget.snapshot["userName"],
-                style: TextStyle(fontSize: 13.sp),
-              ),
-              subtitle: Text(
-                widget.snapshot["location"],
-                style: TextStyle(fontSize: 11.sp),
-              ),
-              trailing: const Icon(Icons.more_horiz),
             ),
           ),
-        ),
-        SizedBox(
-          height: 5.h,
-        ),
-        GestureDetector(
-          onDoubleTap: () async {
-            await doLikeWhenDoubleClick();
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 375.w,
-                height: 320.h,
-                child: CacheImage(imageUrl: widget.snapshot["postImage"]),
-              ),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: isLikeAnimating ? 1 : 0,
-                child: LikeAnimation(
-                  isAnimating: isLikeAnimating,
-                  duration: const Duration(
-                    milliseconds: 400,
-                  ),
-                  onEnd: () {
-                    setState(() {
-                      isLikeAnimating = false;
-                    });
-                  },
-                  child: Icon(
-                    Icons.favorite,
-                    color: Colors.white,
-                    size: 111,
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.snapshot["userName"],
+                  style: TextStyle(
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.2,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          width: 375.w,
-          color: Colors.white,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 5.h,
-              ),
-              Row(
-                children: [
-                  SizedBox(
-                    width: 14.w,
-                  ),
-                  GestureDetector(
-                      onTap: () async {
-                        await FirestoreMethods().addORdeleteLike(
-                            snapshot: widget.snapshot, type: 'posts');
-                      },
-                      child: widget.snapshot["likes"]
-                              .contains(FirebaseAuth.instance.currentUser!.uid)
-                          ? Icon(
-                              Icons.favorite,
-                              size: 25.w,
-                              color: Colors.red,
-                            )
-                          : Icon(Icons.favorite_outline,
-                              size: 25.w, color: Colors.black)),
-                  SizedBox(
-                    width: 17.w,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      showBottomSheet(
-                          backgroundColor: Colors.transparent,
-                          context: context,
-                          builder: (context) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(context).viewInsets.bottom),
-                              child: DraggableScrollableSheet(
-                                  maxChildSize: 0.6.h,
-                                  initialChildSize: 0.6.h,
-                                  minChildSize: 0.2.h,
-                                  builder: (context, scrollController) {
-                                    //***********************************************// */
-                                    return CommentWidget(
-                                        "posts", widget.snapshot["postId"]);
-                                  }),
-                            );
-                          });
-                    },
-                    child: Image.asset(
-                      "assets/image/comment.webp",
-                      height: 28.h,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 17.w,
-                  ),
-                  Image.asset(
-                    "assets/image/send.jpg",
-                    height: 28.h,
-                  ),
-                  const Spacer(),
-                  Padding(
-                    padding: EdgeInsets.only(right: 14.w),
-                    child: Icon(
-                      Icons.bookmark_border,
-                      size: 25.w,
-                    ),
+                if (widget.snapshot["location"] != null &&
+                    widget.snapshot["location"].toString().isNotEmpty) ...[
+                  SizedBox(height: 1.h),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, size: 10.sp, color: AppColors.primary),
+                      SizedBox(width: 2.w),
+                      Text(
+                        widget.snapshot["location"],
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-              Padding(
-                padding: EdgeInsets.only(left: 19.w, top: 13.5.h, bottom: 5.h),
-                child: Text(
-                  widget.snapshot["likes"].length.toString(),
-                  style:
-                      TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 15.w),
-                child: Row(
-                  children: [
-                    Text(
-                      widget.snapshot["userName"] + " ",
-                      style: TextStyle(
-                          fontSize: 13.sp, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      widget.snapshot["caption"],
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                      ),
+              ],
+            ),
+          ),
+          Icon(Icons.more_horiz, color: AppColors.icon, size: 22.sp),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImage() {
+    return GestureDetector(
+      onDoubleTap: () async {
+        await doLikeWhenDoubleClick();
+      },
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: 340.h,
+            child: CacheImage(imageUrl: widget.snapshot["postImage"]),
+          ),
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isLikeAnimating ? 1 : 0,
+            child: LikeAnimation(
+              isAnimating: isLikeAnimating,
+              duration: const Duration(milliseconds: 400),
+              onEnd: () {
+                setState(() {
+                  isLikeAnimating = false;
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.likeGlow,
+                      blurRadius: 40,
+                      spreadRadius: 10,
                     ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: 15.w,
-                  top: 10.h,
-                  bottom: 13.h,
-                ),
-                child: Text(
-                  formatDate(widget.snapshot["time"].toDate(),
-                      [yyyy, '-', mm, '-', dd]),
-                  style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                child: Icon(
+                  Icons.favorite,
+                  color: AppColors.like,
+                  size: 100.sp,
                 ),
               ),
-            ],
+            ),
           ),
-        )
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions(bool isLiked) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      child: Row(
+        children: [
+          _buildActionButton(
+            onTap: () async {
+              await FirestoreMethods()
+                  .addORdeleteLike(snapshot: widget.snapshot, type: 'posts');
+            },
+            icon: isLiked ? Icons.favorite : Icons.favorite_outline,
+            color: isLiked ? AppColors.like : AppColors.icon,
+            glowColor: isLiked ? AppColors.likeGlow : Colors.transparent,
+          ),
+          SizedBox(width: 6.w),
+          Text(
+            "${widget.snapshot["likes"].length}",
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(width: 18.w),
+          _buildActionButton(
+            onTap: () {
+              showBottomSheet(
+                backgroundColor: Colors.transparent,
+                context: context,
+                builder: (context) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom),
+                    child: DraggableScrollableSheet(
+                      maxChildSize: 0.6.h,
+                      initialChildSize: 0.6.h,
+                      minChildSize: 0.2.h,
+                      builder: (context, scrollController) {
+                        return CommentWidget("posts", widget.snapshot["postId"]);
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+            icon: Icons.chat_bubble_outline_rounded,
+            color: AppColors.icon,
+          ),
+          SizedBox(width: 18.w),
+          _buildActionButton(
+            onTap: () {},
+            icon: Icons.send_outlined,
+            color: AppColors.icon,
+          ),
+          const Spacer(),
+          _buildActionButton(
+            onTap: () {},
+            icon: Icons.bookmark_border_rounded,
+            color: AppColors.icon,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onTap,
+    required IconData icon,
+    required Color color,
+    Color glowColor = Colors.transparent,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(6.r),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: glowColor != Colors.transparent
+              ? [BoxShadow(color: glowColor, blurRadius: 12, spreadRadius: 1)]
+              : null,
+        ),
+        child: Icon(icon, size: 24.sp, color: color),
+      ),
+    );
+  }
+
+  Widget _buildInfo() {
+    return Padding(
+      padding: EdgeInsets.only(left: 14.w, right: 14.w, bottom: 12.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: "${widget.snapshot["userName"]} ",
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                TextSpan(
+                  text: widget.snapshot["caption"],
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            formatDate(widget.snapshot["time"].toDate(), [yyyy, '-', mm, '-', dd]),
+            style: TextStyle(fontSize: 11.sp, color: AppColors.textHint),
+          ),
+        ],
+      ),
     );
   }
 
   doLikeWhenDoubleClick() async {
     setState(() {
-     isLikeAnimating = true;
+      isLikeAnimating = true;
     });
-    
+
     String userId = FirebaseAuth.instance.currentUser!.uid;
-    String postId = widget.snapshot["postId"]; // ID الخاص بالمنشور
+    String postId = widget.snapshot["postId"];
     DocumentReference postRef =
         FirebaseFirestore.instance.collection("posts").doc(postId);
     await postRef.update({
-      "posts" == "posts" ? "likes" : "like": FieldValue.arrayUnion([userId])
+      "likes": FieldValue.arrayUnion([userId])
     });
   }
 }

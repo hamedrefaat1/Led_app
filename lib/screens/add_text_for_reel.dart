@@ -1,25 +1,29 @@
-// ignore_for_file: must_be_immutable
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/data/firebase_service/firestore.dart';
-import 'package:instagram_app/data/firebase_service/storage.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/data/firebase_service/firestore.dart';
+import 'package:led/data/firebase_service/storage.dart';
+
 import 'package:video_player/video_player.dart';
 
 class ReelsEditeScreen extends StatefulWidget {
-  File videoFile;
-  ReelsEditeScreen(this.videoFile, {super.key});
+  final File videoFile;
+  const ReelsEditeScreen(this.videoFile, {super.key});
 
   @override
   State<ReelsEditeScreen> createState() => _ReelsEditeScreenState();
 }
+
 class _ReelsEditeScreenState extends State<ReelsEditeScreen> {
   final caption = TextEditingController();
   late VideoPlayerController controller;
   bool isLoading = false;
   bool isVideoInitialized = false;
+  bool isPlaying = true;
 
   @override
   void initState() {
@@ -27,15 +31,11 @@ class _ReelsEditeScreenState extends State<ReelsEditeScreen> {
     controller = VideoPlayerController.file(widget.videoFile)
       ..initialize().then((_) {
         if (mounted) {
-          setState(() {
-            isVideoInitialized = true;
-          });
+          setState(() => isVideoInitialized = true);
         }
         controller.setLooping(true);
         controller.setVolume(1.0);
         controller.play();
-      }).catchError((e) {
-        print("خطأ أثناء تحميل الفيديو: $e");
       });
   }
 
@@ -43,111 +43,189 @@ class _ReelsEditeScreenState extends State<ReelsEditeScreen> {
   void dispose() {
     controller.pause();
     controller.dispose();
+    caption.dispose();
     super.dispose();
+  }
+
+  void _togglePlay() {
+    setState(() {
+      isPlaying = !isPlaying;
+      isPlaying ? controller.play() : controller.pause();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.black),
-        centerTitle: false,
-        title: const Text(
-          'New Reels',
-          style: TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
+        iconTheme: IconThemeData(color: AppColors.icon),
+        title: Text(
+          'New Reel',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
       ),
-      body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.black))
-            : Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w),
-                child: Column(
-                  children: [
-                    SizedBox(height: 30.h),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 40.w),
-                      child: Container(
-                        width: 270.w,
-                        height: 420.h,
-                        child: isVideoInitialized
-                            ? AspectRatio(
-                                aspectRatio: controller.value.aspectRatio,
-                                child: VideoPlayer(controller),
-                              )
-                            : const Center(child: CircularProgressIndicator()),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(height: 20.h),
+                  _buildVideoPreview(),
+                  SizedBox(height: 20.h),
+                  _buildCaptionField(),
+                  Divider(color: AppColors.divider, thickness: 0.5),
+                  SizedBox(height: 24.h),
+                  _buildButtons(),
+                  SizedBox(height: 20.h),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildVideoPreview() {
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14.r),
+        child: SizedBox(
+          width: 220.w,
+          height: 380.h,
+          child: isVideoInitialized
+              ? GestureDetector(
+                  onTap: _togglePlay,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AspectRatio(
+                        aspectRatio: controller.value.aspectRatio,
+                        child: VideoPlayer(controller),
                       ),
-                    ),
-                    SizedBox(height: 20.h),
-                    TextField(
-                      controller: caption,
-                      maxLines: 2,
-                      decoration: const InputDecoration(
-                        hintText: 'Write a caption ...',
-                        border: InputBorder.none,
-                      ),
-                    ),
-                    const Divider(),
-                    SizedBox(height: 20.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Container(
-                          alignment: Alignment.center,
-                          height: 45.h,
-                          width: 150.w,
+                      AnimatedOpacity(
+                        opacity: isPlaying ? 0 : 1,
+                        duration: const Duration(milliseconds: 200),
+                        child: Container(
+                          width: 50.w,
+                          height: 50.w,
                           decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black45,
+                          ),
+                          child: Icon(
+                            Icons.play_arrow_rounded,
                             color: Colors.white,
-                            border: Border.all(color: Colors.black),
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          child: const Text('Save draft'),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            setState(() {
-                              isLoading = true;
-                            });
-
-                            String reelsUrl = await StorageMethods()
-                                .uploadImageToStorage('Reels', widget.videoFile);
-                            await FirestoreMethods().creatReels(
-                              video: reelsUrl,
-                              caption: caption.text,
-                            );
-
-                            setState(() {
-                              isLoading = false;
-                            });
-
-                            Navigator.of(context).pop();
-                          },
-                          child: Container(
-                            alignment: Alignment.center,
-                            height: 45.h,
-                            width: 150.w,
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            child: const Text(
-                              'Share',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            size: 30.sp,
                           ),
                         ),
-                      ],
-                    )
-                  ],
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  color: AppColors.surfaceCard,
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCaptionField() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.edit_outlined, size: 20.sp, color: AppColors.primary),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: TextField(
+              controller: caption,
+              maxLines: 3,
+              style: TextStyle(fontSize: 14.sp, color: AppColors.textPrimary),
+              decoration: InputDecoration(
+                hintText: 'Write a caption...',
+                hintStyle: TextStyle(fontSize: 14.sp, color: AppColors.textHint),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildButtons() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                height: 48.h,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  'Save draft',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                setState(() => isLoading = true);
+                String reelsUrl = await StorageMethods()
+                    .uploadImageToStorage('Reels', widget.videoFile);
+                await FirestoreMethods().creatReels(
+                  video: reelsUrl,
+                  caption: caption.text,
+                );
+                setState(() => isLoading = false);
+                Navigator.of(context).pop();
+              },
+              child: Container(
+                height: 48.h,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                  ),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  'Share',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

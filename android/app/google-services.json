@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:95695539959:android:44b9df0181abde76ee0df2",
+        "mobilesdk_app_id": "1:95695539959:android:9af1044132f3fe1cee0df2",
         "android_client_info": {
-          "package_name": "com.example.instagr"
+          "package_name": "com.example.insta_app"
         }
       },
       "oauth_client": [],

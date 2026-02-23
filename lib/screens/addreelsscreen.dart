@@ -1,10 +1,11 @@
-// ignore_for_file: override_on_non_overriding_member
+// ignore_for_file: prefer_const_constructors, unused_field
 
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:instagram_app/screens/add_text_for_reel.dart';
+import 'package:led/core/app_colors.dart';
+import 'package:led/screens/add_text_for_reel.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class Addreelsscreen extends StatefulWidget {
@@ -20,86 +21,78 @@ class _AddreelsscreenState extends State<Addreelsscreen> {
   File? _file;
   int currentPage = 0;
   int? lastPage;
-  @override
+  int _selectedIndex = -1;
+
   _fetchNewMedia() async {
     lastPage = currentPage;
     final PermissionState ps = await PhotoManager.requestPermissionExtend();
     if (ps.isAuth) {
       List<AssetPathEntity> album =
           await PhotoManager.getAssetPathList(type: RequestType.video);
+
+      if (album.isEmpty) return;
+
       List<AssetEntity> media =
           await album[0].getAssetListPaged(page: currentPage, size: 60);
+
+      if (media.isEmpty) return;
 
       for (var asset in media) {
         if (asset.type == AssetType.video) {
           final file = await asset.file;
-          if (file != null) {
-            path.add(File(file.path));
-            _file = path[0];
-          }
+          if (file != null) path.add(File(file.path));
         }
       }
+
+      if (path.isNotEmpty) _file = path[0];
+
       List<Widget> temp = [];
       for (var asset in media) {
         temp.add(
           FutureBuilder(
-            future: asset.thumbnailDataWithSize(const ThumbnailSize(200, 200)),
+            future: asset.thumbnailDataWithSize(const ThumbnailSize(300, 300)),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done) {
+              if (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.data != null) {
                 return Stack(
+                  fit: StackFit.expand,
                   children: [
-                    Positioned.fill(
-                      child: Image.memory(
-                        snapshot.data!,
-                        fit: BoxFit.cover,
+                    Image.memory(snapshot.data!, fit: BoxFit.cover),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: EdgeInsets.all(6.r),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.play_circle_fill,
+                                size: 12.sp, color: Colors.white),
+                            SizedBox(width: 3.w),
+                            Text(
+                              _formatDuration(asset.videoDuration),
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                      color: Colors.black54, blurRadius: 4)
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    if (asset.type == AssetType.video)
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 2.w),
-                          child: Container(
-                            alignment: Alignment.center,
-                            width: 35.w,
-                            height: 15.h,
-                            child: Row(
-                              children: [
-                                Text(
-                                  asset.videoDuration.inMinutes.toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const Text(
-                                  ':',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Text(
-                                  asset.videoDuration.inSeconds.toString(),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      )
                   ],
                 );
               }
-
-              return Container();
+              return Container(color: AppColors.surfaceElevated);
             },
           ),
         );
       }
+
       setState(() {
         _mediaList.addAll(temp);
         currentPage++;
@@ -107,52 +100,128 @@ class _AddreelsscreenState extends State<Addreelsscreen> {
     }
   }
 
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.toString();
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     _fetchNewMedia();
   }
 
-  int indexx = 0;
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        centerTitle: false,
-        title: Text(
-          'New Reels',
-          style: TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
-      ),
-      body: SafeArea(
-        child: GridView.builder(
-          shrinkWrap: true,
-          itemCount: _mediaList.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisExtent: 250,
-            crossAxisSpacing: 3.w,
-            mainAxisSpacing: 5.h,
+  
+        title: Text(
+          'New Reel',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16.sp,
+            fontWeight: FontWeight.w700,
           ),
-          itemBuilder: (context, index) {
-            return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    indexx = index;
-                    _file = path[index];
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => ReelsEditeScreen(_file!),
-                    ));
-                  });
-                },
-                child: _mediaList[index]);
-          },
+        ),
+        centerTitle: true,
+      ),
+      body: _mediaList.isEmpty
+          ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : Column(
+              children: [
+                _buildGalleryHeader(),
+                Expanded(child: _buildGrid()),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildGalleryHeader() {
+    return Container(
+      height: 44.h,
+      padding: EdgeInsets.symmetric(horizontal: 14.w),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(
+          bottom: BorderSide(color: AppColors.divider, width: 0.5),
         ),
       ),
+      child: Row(
+        children: [
+          Icon(Icons.videocam_outlined, size: 16.sp, color: AppColors.primary),
+          SizedBox(width: 6.w),
+          Text(
+            'Recents',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const Spacer(),
+          Icon(Icons.expand_more, size: 20.sp, color: AppColors.icon),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrid() {
+    return GridView.builder(
+      padding: EdgeInsets.all(2.r),
+      itemCount: _mediaList.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisExtent: 180.h,
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
+      ),
+      itemBuilder: (context, index) {
+        final bool isSelected = _selectedIndex == index;
+        return GestureDetector(
+          onTap: () {
+            setState(() => _selectedIndex = index);
+            if (index < path.length) {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => ReelsEditeScreen(path[index]),
+              ));
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              border: isSelected
+                  ? Border.all(color: AppColors.primary, width: 2)
+                  : null,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _mediaList[index],
+                if (isSelected)
+                  Container(
+                    color: AppColors.primaryGlow,
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.all(4.r),
+                    child: Container(
+                      width: 20.w,
+                      height: 20.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary,
+                      ),
+                      child: Icon(Icons.check, size: 12.sp, color: Colors.white),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

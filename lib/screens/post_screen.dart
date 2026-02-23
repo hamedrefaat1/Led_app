@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:instagram_app/widgets/post_widget.dart';
+import 'package:led/widgets/post_widget.dart';
+
 
 class PostScreen extends StatelessWidget {
   final snapshot;
