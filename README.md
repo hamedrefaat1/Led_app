@@ -16,9 +16,8 @@
 
 ## 📱 About
 
-**LED** is a full-featured social media application inspired by modern photo & video sharing platforms. Built entirely with Flutter and Firebase, it delivers a smooth, dark-themed experience with a signature glow aesthetic.
-
-The name **LED** reflects the core identity of the app — light, clarity, and modern energy. Every screen is designed with a dark background and electric blue/purple glow palette to match that vision.
+**LED** is a full-featured social media app built with Flutter and Firebase.
+Share photos, watch reels, discover people, and stay connected — all wrapped in a sleek dark UI with a modern glow aesthetic.
 
 ---
 
